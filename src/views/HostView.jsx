@@ -5,6 +5,7 @@ import { updateGameState, resetGame } from "../realtimeSync";
 import { Leaderboard } from "../components/Leaderboard";
 import { TimerBar } from "../components/TimerBar";
 import { sortLeaderboard } from "../gameLogic";
+import { CricketPitchAnimation } from "../components/CricketPitchAnimation";
 
 export function HostView({ gameState, timeline, players }) {
   const [copied, setCopied] = useState(false);
@@ -163,6 +164,12 @@ export function HostView({ gameState, timeline, players }) {
                 {timeline.phase === "reveal" ? "Over Result" : "Live Delivery"}
               </span>
             </div>
+
+            {/* Animated 22-yard pitch on projector screen */}
+            <CricketPitchAnimation
+              phase={timeline.phase}
+              timeRemaining={timeline.timeRemaining}
+            />
 
             <TimerBar
               timeRemaining={timeline.timeRemaining}
