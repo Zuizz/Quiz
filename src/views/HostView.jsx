@@ -5,7 +5,7 @@ import { updateGameState, resetGame } from "../realtimeSync";
 import { Leaderboard } from "../components/Leaderboard";
 import { TimerBar } from "../components/TimerBar";
 import { sortLeaderboard } from "../gameLogic";
-import { CricketPitchAnimation } from "../components/CricketPitchAnimation";
+import { GoogleCricketPitch } from "../components/GoogleCricketPitch";
 
 export function HostView({ gameState, timeline, players }) {
   const [copied, setCopied] = useState(false);
@@ -165,10 +165,10 @@ export function HostView({ gameState, timeline, players }) {
               </span>
             </div>
 
-            {/* Animated 22-yard pitch on projector screen */}
-            <CricketPitchAnimation
-              phase={timeline.phase}
-              timeRemaining={timeline.timeRemaining}
+            {/* Google Doodle Perspective Pitch */}
+            <GoogleCricketPitch
+              isBowling={timeline.phase === "question"}
+              isFrozen={timeline.phase === "question"}
             />
 
             <TimerBar

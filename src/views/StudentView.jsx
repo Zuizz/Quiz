@@ -7,7 +7,7 @@ import { TimerBar } from "../components/TimerBar";
 import { Leaderboard } from "../components/Leaderboard";
 import { FeedbackOverlay } from "../components/FeedbackOverlay";
 import { evaluateAnswer, MAX_WICKETS } from "../gameLogic";
-import { CricketPitchAnimation } from "../components/CricketPitchAnimation";
+import { GoogleCricketPitch } from "../components/GoogleCricketPitch";
 
 export function StudentView({ gameState, timeline, players, theme, toggleTheme }) {
   // Read or create unique playerId in localStorage
@@ -331,10 +331,10 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
         {/* Live Question / Answer Area */}
         {gameState.status === "running" && (timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
           <div className="space-y-4">
-            {/* Animated 22-Yard Cricket Pitch & Delivery */}
-            <CricketPitchAnimation
-              phase={timeline.phase}
-              timeRemaining={timeline.timeRemaining}
+            {/* Google Doodle Style 22-Yard Cricket Pitch & Frozen Ball Delivery */}
+            <GoogleCricketPitch
+              isBowling={timeline.phase === "question"}
+              isFrozen={timeline.phase === "question"}
               outcome={feedbackOutcome}
             />
 

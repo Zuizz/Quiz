@@ -128,3 +128,4 @@ export function CricketPitchAnimation({ phase, timeRemaining, outcome = null }) 
     </div>
   );
 }
+
