@@ -5,7 +5,7 @@ import { updateGameState, resetGame } from "../realtimeSync";
 import { Leaderboard } from "../components/Leaderboard";
 import { TimerBar } from "../components/TimerBar";
 import { sortLeaderboard } from "../gameLogic";
-import { GoogleCricketPitch } from "../components/GoogleCricketPitch";
+import { HumanCricketPitch } from "../components/HumanCricketPitch";
 
 export function HostView({ gameState, timeline, players }) {
   const [copied, setCopied] = useState(false);
@@ -154,62 +154,82 @@ export function HostView({ gameState, timeline, players }) {
         )}
 
         {/* ACTIVE QUESTION OR REVEAL */}
-        {isPlaying && (timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
+        {isPlaying && (timeline.phase === "bowling" || timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
           <div className="w-full space-y-6">
             <div className="flex items-center justify-between text-sm font-bold text-slate-400">
               <span className="px-3 py-1 bg-slate-800 rounded-lg text-emerald-400 border border-slate-700">
                 Ball {timeline.questionIndex + 1} of {QUESTIONS.length}
               </span>
               <span className="uppercase tracking-wider">
-                {timeline.phase === "reveal" ? "Over Result" : "Live Delivery"}
+                {timeline.phase === "bowling" ? "🏃 Delivery Coming In" : timeline.phase === "reveal" ? "Over Result" : "Live Delivery"}
               </span>
             </div>
 
-            {/* Google Doodle Perspective Pitch */}
-            <GoogleCricketPitch
-              isBowling={timeline.phase === "question"}
-              isFrozen={timeline.phase === "question"}
-            />
-
-            <TimerBar
+            {/* Human Cricket Pitch with Bowler, Batter & Ball */}
+            <HumanCricketPitch
+              phase={timeline.phase}
               timeRemaining={timeline.timeRemaining}
-              totalDuration={timeline.phase === "reveal" ? 5000 : 30000}
-              isReveal={timeline.phase === "reveal"}
             />
 
-            <div className="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl text-center">
-              <h2 className="text-2xl md:text-4xl font-extrabold text-white leading-snug">
-                {currentQ.question}
-              </h2>
-            </div>
+            {/* In Bowling Phase (3.5s): Show Delivery Run-up announcement */}
+            {timeline.phase === "bowling" && (
+              <div className="p-6 bg-slate-800/80 border-2 border-emerald-500/50 rounded-3xl text-center animate-pulse">
+                <span className="text-sm font-black uppercase tracking-widest text-emerald-400">
+                  Ball {timeline.questionIndex + 1}
+                </span>
+                <h3 className="text-3xl font-black text-white mt-1">
+                  Fast Bowler Running In...
+                </h3>
+                <p className="text-slate-400 text-sm mt-1">
+                  The delivery is about to freeze in mid-pitch. Batters, take guard!
+                </p>
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {currentQ.options.map((opt) => {
-                const isCorrect = opt.key === currentQ.correct;
-                const showAnswer = timeline.phase === "reveal";
+            {/* In Question & Reveal Phases: Show Timer, Question card & options */}
+            {(timeline.phase === "question" || timeline.phase === "reveal") && (
+              <>
+                <TimerBar
+                  timeRemaining={timeline.timeRemaining}
+                  totalDuration={timeline.phase === "reveal" ? 5000 : 30000}
+                  isReveal={timeline.phase === "reveal"}
+                />
 
-                let optClass = "bg-slate-800/60 border-slate-700 text-slate-200";
-                if (showAnswer) {
-                  if (isCorrect) {
-                    optClass = "bg-emerald-600 border-white text-white font-black scale-102 shadow-xl shadow-emerald-500/30";
-                  } else {
-                    optClass = "bg-slate-800/30 border-slate-800 text-slate-500 opacity-60";
-                  }
-                }
+                <div className="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl text-center">
+                  <h2 className="text-2xl md:text-4xl font-extrabold text-white leading-snug">
+                    {currentQ.question}
+                  </h2>
+                </div>
 
-                return (
-                  <div
-                    key={opt.key}
-                    className={`flex items-center gap-4 p-4 md:p-5 rounded-2xl border-2 transition-all ${optClass}`}
-                  >
-                    <span className="w-9 h-9 rounded-xl bg-slate-900/50 flex items-center justify-center font-black text-sm">
-                      {opt.key}
-                    </span>
-                    <span className="text-base md:text-lg font-medium">{opt.text}</span>
-                  </div>
-                );
-              })}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {currentQ.options.map((opt) => {
+                    const isCorrect = opt.key === currentQ.correct;
+                    const showAnswer = timeline.phase === "reveal";
+
+                    let optClass = "bg-slate-800/60 border-slate-700 text-slate-200";
+                    if (showAnswer) {
+                      if (isCorrect) {
+                        optClass = "bg-emerald-600 border-white text-white font-black scale-102 shadow-xl shadow-emerald-500/30";
+                      } else {
+                        optClass = "bg-slate-800/30 border-slate-800 text-slate-500 opacity-60";
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={opt.key}
+                        className={`flex items-center gap-4 p-4 md:p-5 rounded-2xl border-2 transition-all ${optClass}`}
+                      >
+                        <span className="w-9 h-9 rounded-xl bg-slate-900/50 flex items-center justify-center font-black text-sm">
+                          {opt.key}
+                        </span>
+                        <span className="text-base md:text-lg font-medium">{opt.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {timeline.phase === "reveal" && (
               <div className="pt-4 animate-fade-in">

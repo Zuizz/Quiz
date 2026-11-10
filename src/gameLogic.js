@@ -1,25 +1,20 @@
 import { QUESTIONS } from "./questions.js";
 
-export const GET_READY_DURATION = 4000;      // 4s
-export const QUESTION_DURATION = 30000;     // 30s
-export const REVEAL_DURATION = 5000;        // 5s
-export const CYCLE_DURATION = QUESTION_DURATION + REVEAL_DURATION; // 35s
-export const SIX_CUTOFF_MS = 20000;         // 20s cutoff for a SIX vs FOUR
+export const GET_READY_DURATION = 4000;      // 4s match intro
+export const BOWLING_DURATION = 3500;        // 3.5s bowler runs in & bowls before question appears
+export const QUESTION_DURATION = 30000;      // 30s question faced while ball is frozen in mid-pitch
+export const REVEAL_DURATION = 5000;         // 5s reveal: batter hits SIX/FOUR or WICKET
+export const CYCLE_DURATION = BOWLING_DURATION + QUESTION_DURATION + REVEAL_DURATION; // 38.5s per question cycle
+export const SIX_CUTOFF_MS = 20000;          // 20s cutoff for a SIX vs FOUR
 export const MAX_WICKETS = 3;
 
 /**
  * Calculates game timeline given a startAt timestamp.
  * 
- * @param {number|null} startAt - Timestamp when the game was started (ms)
- * @param {number} totalQuestions - Total count of questions
- * @param {number} [now=Date.now()] - Current timestamp
- * @returns {object} status details: {
- *   phase: 'idle' | 'get_ready' | 'question' | 'reveal' | 'finished',
- *   questionIndex: number,
- *   timeRemaining: number, // ms remaining in current phase
- *   questionElapsed: number, // ms elapsed since question opened (0-30000)
- *   isLastQuestion: boolean
- * }
+ * Phases per ball:
+ * 1. 'bowling': 3.5s animation of bowler running in and releasing ball down the pitch
+ * 2. 'question': 30s question active, ball frozen right in mid-pitch striking zone
+ * 3. 'reveal': 5s reveal playing SIX, FOUR, or WICKET batter animation + scorecard
  */
 export function calculateGameTimeline(startAt, totalQuestions = QUESTIONS.length, now = Date.now()) {
   if (!startAt) {
@@ -44,7 +39,7 @@ export function calculateGameTimeline(startAt, totalQuestions = QUESTIONS.length
     };
   }
 
-  // 1. Get ready phase (0 to 4s)
+  // 1. Initial Match Get Ready (0 to 4s)
   if (elapsed < GET_READY_DURATION) {
     return {
       phase: "get_ready",
@@ -55,7 +50,7 @@ export function calculateGameTimeline(startAt, totalQuestions = QUESTIONS.length
     };
   }
 
-  // 2. Questions cycle
+  // 2. Question Cycles
   const gameTime = elapsed - GET_READY_DURATION;
   const questionIndex = Math.floor(gameTime / CYCLE_DURATION);
 
@@ -72,19 +67,34 @@ export function calculateGameTimeline(startAt, totalQuestions = QUESTIONS.length
   const cycleElapsed = gameTime % CYCLE_DURATION;
   const isLast = questionIndex === totalQuestions - 1;
 
-  if (cycleElapsed < QUESTION_DURATION) {
+  // Sub-phase A: Bowler delivery run-up (0 -> 3.5s)
+  if (cycleElapsed < BOWLING_DURATION) {
+    return {
+      phase: "bowling",
+      questionIndex,
+      timeRemaining: Math.max(0, BOWLING_DURATION - cycleElapsed),
+      questionElapsed: 0,
+      isLastQuestion: isLast,
+    };
+  } 
+  // Sub-phase B: Question Active with Ball Frozen in Mid-pitch (3.5s -> 33.5s)
+  else if (cycleElapsed < BOWLING_DURATION + QUESTION_DURATION) {
+    const qElapsed = cycleElapsed - BOWLING_DURATION;
     return {
       phase: "question",
       questionIndex,
-      timeRemaining: Math.max(0, QUESTION_DURATION - cycleElapsed),
-      questionElapsed: cycleElapsed,
+      timeRemaining: Math.max(0, QUESTION_DURATION - qElapsed),
+      questionElapsed: qElapsed,
       isLastQuestion: isLast,
     };
-  } else {
+  } 
+  // Sub-phase C: Reveal with SIX / FOUR / WICKET shot animation (33.5s -> 38.5s)
+  else {
+    const revealElapsed = cycleElapsed - (BOWLING_DURATION + QUESTION_DURATION);
     return {
       phase: "reveal",
       questionIndex,
-      timeRemaining: Math.max(0, CYCLE_DURATION - cycleElapsed),
+      timeRemaining: Math.max(0, REVEAL_DURATION - revealElapsed),
       questionElapsed: QUESTION_DURATION,
       isLastQuestion: isLast,
     };
@@ -93,18 +103,12 @@ export function calculateGameTimeline(startAt, totalQuestions = QUESTIONS.length
 
 /**
  * Calculates score delta and wicket for an answer attempt.
- *
- * @param {string|null} selectedAnswer - The chosen option key (e.g. 'A') or null if no answer
- * @param {string} correctAnswer - The correct option key
- * @param {number|null} elapsedMsWhenAnswered - Milliseconds elapsed from question start when answered
- * @returns {{ runs: number, wicketLost: boolean, outcome: 'SIX' | 'FOUR' | 'WICKET' }}
  */
 export function evaluateAnswer(selectedAnswer, correctAnswer, elapsedMsWhenAnswered) {
   if (!selectedAnswer || selectedAnswer !== correctAnswer) {
     return { runs: 0, wicketLost: true, outcome: "WICKET" };
   }
 
-  // Correct answer
   if (elapsedMsWhenAnswered !== null && elapsedMsWhenAnswered <= SIX_CUTOFF_MS) {
     return { runs: 6, wicketLost: false, outcome: "SIX" };
   } else {
@@ -114,9 +118,6 @@ export function evaluateAnswer(selectedAnswer, correctAnswer, elapsedMsWhenAnswe
 
 /**
  * Sorts players cricket-style: highest runs first, then fewer wickets lost.
- * 
- * @param {Array|object} players
- * @returns {Array} sorted players list with rank
  */
 export function sortLeaderboard(players) {
   const list = Array.isArray(players) ? players : Object.values(players || {});
@@ -130,7 +131,6 @@ export function sortLeaderboard(players) {
       }
       const wA = Number(a.wickets) || 0;
       const wB = Number(b.wickets) || 0;
-      return wA - wB; // Fewer wickets lost is better
+      return wA - wB;
     });
 }
-

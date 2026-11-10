@@ -193,3 +193,4 @@ export function GoogleCricketPitch({ isBowling, isFrozen, outcome = null }) {
     </div>
   );
 }
+

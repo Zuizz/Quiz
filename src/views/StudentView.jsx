@@ -7,7 +7,7 @@ import { TimerBar } from "../components/TimerBar";
 import { Leaderboard } from "../components/Leaderboard";
 import { FeedbackOverlay } from "../components/FeedbackOverlay";
 import { evaluateAnswer, MAX_WICKETS } from "../gameLogic";
-import { GoogleCricketPitch } from "../components/GoogleCricketPitch";
+import { HumanCricketPitch } from "../components/HumanCricketPitch";
 
 export function StudentView({ gameState, timeline, players, theme, toggleTheme }) {
   // Read or create unique playerId in localStorage
@@ -328,100 +328,120 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
           </div>
         )}
 
-        {/* Live Question / Answer Area */}
-        {gameState.status === "running" && (timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
+        {/* Live Cricket Pitch & Delivery Area */}
+        {gameState.status === "running" && (timeline.phase === "bowling" || timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
           <div className="space-y-4">
-            {/* Google Doodle Style 22-Yard Cricket Pitch & Frozen Ball Delivery */}
-            <GoogleCricketPitch
-              isBowling={timeline.phase === "question"}
-              isFrozen={timeline.phase === "question"}
+            {/* Perspective Pitch with Human Bowler, Batter & Ball */}
+            <HumanCricketPitch
+              phase={timeline.phase}
+              timeRemaining={timeline.timeRemaining}
               outcome={feedbackOutcome}
             />
 
-            <TimerBar
-              timeRemaining={timeline.timeRemaining}
-              totalDuration={timeline.phase === "reveal" ? 5000 : 30000}
-              isReveal={timeline.phase === "reveal"}
-            />
-
-            {/* Question Text */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm text-center">
-              <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">
-                Ball {currentQIndex + 1} of {QUESTIONS.length}
-              </span>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                {currentQ.question}
-              </h2>
-            </div>
-
-            {/* Answer Options Grid */}
-            <div className="space-y-2.5">
-              {currentQ.options.map((opt) => {
-                const isSelected = selectedKey === opt.key;
-                const showReveal = timeline.phase === "reveal";
-                const isCorrect = opt.key === currentQ.correct;
-
-                let btnStyle = "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-gray-800 dark:text-gray-200";
-                let badgeStyle = "bg-gray-100 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-200";
-
-                if (showReveal) {
-                  if (isCorrect) {
-                    btnStyle = "bg-emerald-500 text-white border-emerald-600 font-bold shadow-lg shadow-emerald-500/40 animate-pop";
-                    badgeStyle = "bg-emerald-700 text-white";
-                  } else if (isSelected && !isCorrect) {
-                    btnStyle = "bg-rose-600 text-white border-rose-700 font-bold shadow-md shadow-rose-500/30 animate-shake";
-                    badgeStyle = "bg-rose-800 text-white";
-                  } else {
-                    btnStyle = "bg-gray-100 dark:bg-zinc-900/60 text-gray-400 dark:text-gray-600 opacity-40 border-transparent";
-                  }
-                } else if (isSelected) {
-                  btnStyle = "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-bold shadow-md animate-pulse-glow";
-                  badgeStyle = "bg-emerald-500 text-white";
-                } else if (hasAnsweredCurrentQ) {
-                  btnStyle = "bg-gray-50 dark:bg-zinc-900/40 text-gray-400 dark:text-gray-600 border-gray-200/50 dark:border-zinc-800/50 opacity-50";
-                }
-
-                const isDisabled = hasAnsweredCurrentQ || isOut || !isEligibleForCurrentQ || showReveal;
-
-                return (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => handleSelectOption(opt.key)}
-                    className={`w-full min-h-[58px] p-4 rounded-2xl border-2 flex items-center justify-between gap-3.5 text-left text-base font-semibold transition-all duration-200 ${btnStyle} ${
-                      isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:border-emerald-400 active:scale-98"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3.5 flex-1">
-                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 transition-colors ${badgeStyle}`}>
-                        {opt.key}
-                      </span>
-                      <span className="leading-snug">{opt.text}</span>
-                    </div>
-
-                    {showReveal && isCorrect && (
-                      <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0 animate-pop" />
-                    )}
-                    {showReveal && isSelected && !isCorrect && (
-                      <XCircle className="w-5 h-5 text-white flex-shrink-0 animate-shake" />
-                    )}
-                    {!showReveal && isSelected && (
-                      <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                        <Lock className="w-4 h-4" />
-                        <span>LOCKED</span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {hasAnsweredCurrentQ && timeline.phase === "question" && (
-              <div className="flex items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <Lock className="w-4 h-4" />
-                <span>Shot locked! Single attempt recorded. Umpire reveals at 30s...</span>
+            {/* During 3.5s Bowling Phase: Clear Delivery Coming Announcement */}
+            {timeline.phase === "bowling" && (
+              <div className="p-4 bg-emerald-600/10 border-2 border-emerald-500 rounded-2xl text-center animate-pulse">
+                <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                  Ball {currentQIndex + 1} Incoming
+                </span>
+                <h3 className="text-xl font-black text-gray-950 dark:text-white mt-0.5">
+                  Fast Bowler Running In...
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Delivery will freeze in mid-pitch. Get ready to pick your shot!
+                </p>
               </div>
+            )}
+
+            {/* Question appears once ball reaches and freezes in mid-pitch (or during reveal) */}
+            {(timeline.phase === "question" || timeline.phase === "reveal") && (
+              <>
+                <TimerBar
+                  timeRemaining={timeline.timeRemaining}
+                  totalDuration={timeline.phase === "reveal" ? 5000 : 30000}
+                  isReveal={timeline.phase === "reveal"}
+                />
+
+                {/* Question Text */}
+                <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm text-center">
+                  <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">
+                    Ball {currentQIndex + 1} of {QUESTIONS.length}
+                  </span>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                    {currentQ.question}
+                  </h2>
+                </div>
+
+                {/* Answer Options Grid */}
+                <div className="space-y-2.5">
+                  {currentQ.options.map((opt) => {
+                    const isSelected = selectedKey === opt.key;
+                    const showReveal = timeline.phase === "reveal";
+                    const isCorrect = opt.key === currentQ.correct;
+
+                    let btnStyle = "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-gray-800 dark:text-gray-200";
+                    let badgeStyle = "bg-gray-100 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-200";
+
+                    if (showReveal) {
+                      if (isCorrect) {
+                        btnStyle = "bg-emerald-500 text-white border-emerald-600 font-bold shadow-lg shadow-emerald-500/40 animate-pop";
+                        badgeStyle = "bg-emerald-700 text-white";
+                      } else if (isSelected && !isCorrect) {
+                        btnStyle = "bg-rose-600 text-white border-rose-700 font-bold shadow-md shadow-rose-500/30 animate-shake";
+                        badgeStyle = "bg-rose-800 text-white";
+                      } else {
+                        btnStyle = "bg-gray-100 dark:bg-zinc-900/60 text-gray-400 dark:text-gray-600 opacity-40 border-transparent";
+                      }
+                    } else if (isSelected) {
+                      btnStyle = "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-bold shadow-md animate-pulse-glow";
+                      badgeStyle = "bg-emerald-500 text-white";
+                    } else if (hasAnsweredCurrentQ) {
+                      btnStyle = "bg-gray-50 dark:bg-zinc-900/40 text-gray-400 dark:text-gray-600 border-gray-200/50 dark:border-zinc-800/50 opacity-50";
+                    }
+
+                    const isDisabled = hasAnsweredCurrentQ || isOut || !isEligibleForCurrentQ || showReveal;
+
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => handleSelectOption(opt.key)}
+                        className={`w-full min-h-[58px] p-4 rounded-2xl border-2 flex items-center justify-between gap-3.5 text-left text-base font-semibold transition-all duration-200 ${btnStyle} ${
+                          isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:border-emerald-400 active:scale-98"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5 flex-1">
+                          <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 transition-colors ${badgeStyle}`}>
+                            {opt.key}
+                          </span>
+                          <span className="leading-snug">{opt.text}</span>
+                        </div>
+
+                        {showReveal && isCorrect && (
+                          <CheckCircle2 className="w-5 h-5 text-white flex-shrink-0 animate-pop" />
+                        )}
+                        {showReveal && isSelected && !isCorrect && (
+                          <XCircle className="w-5 h-5 text-white flex-shrink-0 animate-shake" />
+                        )}
+                        {!showReveal && isSelected && (
+                          <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <Lock className="w-4 h-4" />
+                            <span>LOCKED</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {hasAnsweredCurrentQ && timeline.phase === "question" && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <Lock className="w-4 h-4" />
+                    <span>Shot locked! Single attempt recorded. Umpire reveals at 30s...</span>
+                  </div>
+                )}
+              </>
             )}
 
             {timeline.phase === "reveal" && (
