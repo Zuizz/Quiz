@@ -69,6 +69,18 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
     }
   }, [hasJoined, players, playerId, nameInput, joinedQ]);
 
+  // RESET HANDLER: When teacher resets the game (status is 'idle' or resetAt changes), reset joinedQ to 0 and clear answers
+  useEffect(() => {
+    if (gameState.status === "idle" || (gameState.resetAt && gameState.resetAt > 0)) {
+      setJoinedQ(0);
+      setPlayerAnswers({});
+      setFeedbackOutcome(null);
+      evaluatedQuestionsRef.current.clear();
+      localStorage.removeItem("moonquiz_joined_q");
+      localStorage.removeItem(`moonquiz_answers_${playerId}`);
+    }
+  }, [gameState.status, gameState.resetAt, playerId]);
+
   const isOut = (Number(currentPlayer.wickets) || 0) >= MAX_WICKETS;
   const isEligibleForCurrentQ = currentQIndex >= joinedQ;
 
@@ -79,16 +91,6 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
 
   // Track scored questions using a ref to execute evaluation EXACTLY ONCE per question reveal
   const evaluatedQuestionsRef = useRef(new Set());
-
-  // Reset when match is reset
-  useEffect(() => {
-    if (gameState.status === "idle") {
-      setPlayerAnswers({});
-      setFeedbackOutcome(null);
-      evaluatedQuestionsRef.current.clear();
-      localStorage.removeItem(`moonquiz_answers_${playerId}`);
-    }
-  }, [gameState.status, playerId]);
 
   // Leave / Change Name
   const handleLeaveOrChangeName = () => {
@@ -318,7 +320,7 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
           </div>
         )}
 
-        {/* Late joiner alert */}
+        {/* Late joiner alert (Only if joinedQ > 0 and game is actively on a prior question) */}
         {!isEligibleForCurrentQ && gameState.status === "running" && timeline.phase !== "finished" && (
           <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-700 dark:text-amber-400 text-center font-medium">
             You joined late! You will take strike starting next ball (Ball {joinedQ + 1}).
