@@ -5,7 +5,6 @@ import { syncPlayerRecord } from "../realtimeSync";
 import { Stumps } from "../components/Stumps";
 import { TimerBar } from "../components/TimerBar";
 import { Leaderboard } from "../components/Leaderboard";
-import { FeedbackOverlay } from "../components/FeedbackOverlay";
 import { evaluateAnswer, MAX_WICKETS } from "../gameLogic";
 import { FullScreenCricketStadium } from "../components/FullScreenCricketStadium";
 
