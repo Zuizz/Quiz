@@ -233,8 +233,6 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
   // 2. ACTIVE STUDENT SCREEN
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-gray-900 dark:text-white flex flex-col">
-      <FeedbackOverlay outcome={feedbackOutcome} />
-
       {/* Top sticky scorecard bar */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-zinc-900/95 backdrop-blur border-b border-gray-200 dark:border-zinc-800 px-4 py-2.5 shadow-sm">
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -358,24 +356,20 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
               </div>
             </div>
 
-            {/* During Bowling Phase (3.5s): Big In-Game Announcement overlay */}
+            {/* During Bowling Phase (3.5s): ONLY the full stadium animation plays with no popup blocking */}
             {timeline.phase === "bowling" && (
-              <div className="my-auto text-center space-y-2 p-6 bg-black/60 backdrop-blur-lg rounded-3xl border-2 border-emerald-400/50 shadow-2xl animate-pop">
-                <div className="text-4xl animate-bounce">🏃‍♂️💨</div>
-                <span className="text-xs font-black uppercase tracking-widest text-emerald-300">
-                  Delivery Incoming
+              <div className="mt-auto mb-6 text-center space-y-1 p-3 bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl animate-pop max-w-xs mx-auto">
+                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-300 block">
+                  🏃 Fast Bowler Running In...
                 </span>
-                <h2 className="text-2xl font-black text-white">
-                  Fast Bowler Running In!
-                </h2>
-                <p className="text-xs text-slate-200">
-                  Ball will freeze right in mid-pitch. Get ready to pick your shot!
-                </p>
+                <span className="text-[10px] text-slate-200 block">
+                  Watch the delivery! Question pops up when ball reaches mid-pitch.
+                </span>
               </div>
             )}
 
-            {/* Question & Options Pop Up Directly in the Game when the Ball Freezes */}
-            {(timeline.phase === "question" || timeline.phase === "reveal") && (
+            {/* ONLY during Question Phase (30s): The question and answer options pop up! */}
+            {timeline.phase === "question" && (
               <div className="space-y-3.5 my-auto animate-fade-in">
                 <TimerBar
                   timeRemaining={timeline.timeRemaining}
@@ -462,9 +456,17 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
               </div>
             )}
 
-            {/* Leaderboard during 5s reveal */}
+            {/* At 30s Reveal (5s): Quiz hides so the batter shot animation & clean stadium result are fully visible! */}
             {timeline.phase === "reveal" && (
-              <div className="pt-2 animate-fade-in">
+              <div className="mt-auto space-y-2 animate-fade-in w-full pb-2">
+                <div className="p-3 bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 text-center shadow-2xl">
+                  <span className="text-xs uppercase font-black tracking-widest text-emerald-400 block">
+                    Ball {currentQIndex + 1} Result
+                  </span>
+                  <span className="text-xl font-black text-white">
+                    {feedbackOutcome === "SIX" ? "🚀 MAXIMUM! SIX RUNS!" : feedbackOutcome === "FOUR" ? "⚡ BOUNDARY! FOUR RUNS!" : "🔴 WICKET! BOWLED HIM!"}
+                  </span>
+                </div>
                 <Leaderboard players={players} highlightPlayerId={playerId} />
               </div>
             )}

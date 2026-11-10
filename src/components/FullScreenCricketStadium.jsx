@@ -249,3 +249,4 @@ export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null,
     </div>
   );
 }
+
