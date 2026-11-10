@@ -1,27 +1,47 @@
-import React from "react";
+import React, { useEffect } from "react";
+import confetti from "canvas-confetti";
 
 /**
  * FullScreenCricketStadium
  * 
- * Renders an immersive, full-screen 3D perspective cricket stadium game:
- * - Stadium sky, floodlights, cheering crowd stands, and boundary ropes.
- * - Perspective 22-yard turf pitch spanning from the horizon down to the foreground.
- * - Human fast bowler running in from far distance to deliver the ball.
- * - Delivery speeds down the pitch, bounces on the turf, and freezes right in MID-PITCH!
- * - Human batter at the crease with helmet, pads, and bat standing ready.
- * - Children content (the Question Card, Timer, and Answer Options) pop up DIRECTLY
- *   inside the stadium game overlay while the ball stays frozen!
- * - When 30s timer runs out: batter swings with SIX, FOUR, or WICKET bails-flying animation!
+ * Immersive full-screen stadium cricket game:
+ * 1. Bowling delivery animation (human fast bowler runs in from far end and bowls down pitch).
+ * 2. Ball freezes suspended in mid-pitch when question opens.
+ * 3. When time runs out / answered (reveal phase):
+ *    - SIX!: Massive 3D billboard "SIX!", lofted boundary trajectory into the sky, confetti burst!
+ *    - FOUR!: Sizzling 3D billboard "FOUR!", grass-cutter boundary animation!
+ *    - WICKET!: Big red warning banner "WICKET! OUT!", wooden stumps and bails shattering!
  */
 export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null, children }) {
   const isBowling = phase === "bowling";
   const isQuestion = phase === "question";
   const isReveal = phase === "reveal";
 
+  // Trigger celebration effects on SIX / FOUR
+  useEffect(() => {
+    if (isReveal) {
+      if (outcome === "SIX") {
+        confetti({
+          particleCount: 150,
+          spread: 100,
+          origin: { y: 0.4 },
+          colors: ["#10b981", "#fbbf24", "#3b82f6", "#ffffff"]
+        });
+      } else if (outcome === "FOUR") {
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { y: 0.5 },
+          colors: ["#f59e0b", "#fbbf24", "#10b981"]
+        });
+      }
+    }
+  }, [isReveal, outcome]);
+
   return (
     <div className="relative w-full min-h-screen overflow-x-hidden overflow-y-auto bg-[#477a1e] flex flex-col justify-between select-none">
       
-      {/* 1. SKY & FLOODLIGHTS BACKGROUND */}
+      {/* 1. STADIUM SKY & FLOODLIGHTS */}
       <div className="absolute top-0 inset-x-0 h-44 bg-gradient-to-b from-[#1e3a8a] via-[#1d4ed8] to-[#60a5fa] pointer-events-none z-0">
         {/* Stadium Floodlights Left & Right */}
         <div className="absolute top-2 left-4 flex gap-1 opacity-90">
@@ -60,7 +80,7 @@ export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null,
         </div>
       </div>
 
-      {/* 2. PERSPECTIVE PITCH & PLAYING FIELD LAYER (Absolute background canvas) */}
+      {/* 2. PERSPECTIVE PITCH & PLAYING FIELD LAYER */}
       <div className="absolute inset-0 top-32 z-0 pointer-events-none flex flex-col justify-end overflow-hidden">
         {/* Outfield Grass with Mowing Stripes */}
         <div className="absolute inset-0 bg-[#4d8621] bg-[repeating-linear-gradient(90deg,transparent,transparent_30px,rgba(255,255,255,0.06)_30px,rgba(255,255,255,0.06)_60px)]" />
@@ -141,22 +161,30 @@ export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null,
           </div>
         </div>
 
-        {/* Foreground Wickets */}
+        {/* Foreground Wickets (Wood Stumps & Bails with Shatter Animation on Wicket) */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center">
-          <div className={`flex gap-1 -mb-1 ${isReveal && outcome === "WICKET" ? "animate-shake opacity-0" : ""}`}>
+          {/* Bails */}
+          <div className={`flex gap-1 -mb-1 ${isReveal && outcome === "WICKET" ? "animate-bail-fly" : ""}`}>
             <div className="w-6 h-1.5 bg-[#835628] rounded-sm shadow-sm" />
             <div className="w-6 h-1.5 bg-[#835628] rounded-sm shadow-sm" />
           </div>
-          <div className={`flex items-end gap-2.5 ${isReveal && outcome === "WICKET" ? "animate-shake text-red-500 scale-105" : ""}`}>
-            <div className="w-3 h-16 bg-[#6d461f] border border-[#452b11] rounded-t-sm shadow-md" />
-            <div className="w-3 h-16 bg-[#6d461f] border border-[#452b11] rounded-t-sm shadow-md" />
-            <div className="w-3 h-16 bg-[#784e24] border border-[#452b11] rounded-t-sm shadow-md" />
+          {/* 3 Stumps */}
+          <div className="flex items-end gap-2.5">
+            <div className={`w-3 h-16 bg-[#6d461f] border border-[#452b11] rounded-t-sm shadow-md transition-all ${
+              isReveal && outcome === "WICKET" ? "animate-stump-left" : ""
+            }`} />
+            <div className={`w-3 h-16 bg-[#6d461f] border border-[#452b11] rounded-t-sm shadow-md transition-all ${
+              isReveal && outcome === "WICKET" ? "scale-90 opacity-60" : ""
+            }`} />
+            <div className={`w-3 h-16 bg-[#784e24] border border-[#452b11] rounded-t-sm shadow-md transition-all ${
+              isReveal && outcome === "WICKET" ? "animate-stump-right" : ""
+            }`} />
           </div>
         </div>
 
-        {/* Foreground Human Batter */}
+        {/* Foreground Human Batter (Ready stance or Swing motion on SIX/FOUR) */}
         <div className="absolute bottom-10 left-[12%] sm:left-[22%] z-25">
-          <div className={`relative transition-transform duration-300 ${isReveal && (outcome === "SIX" || outcome === "FOUR") ? "translate-x-2 -translate-y-3 scale-105" : ""}`}>
+          <div className={`relative transition-transform duration-500 ${isReveal && (outcome === "SIX" || outcome === "FOUR") ? "translate-x-4 -translate-y-4 scale-110" : ""}`}>
             <svg width="135" height="155" viewBox="0 0 120 140">
               <ellipse cx="64" cy="40" rx="16" ry="15" fill="#1e40af" />
               <path d="M52 44 L76 44 L74 52 L54 52 Z" fill="#0f172a" opacity="0.8" />
@@ -166,18 +194,19 @@ export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null,
               <path d="M58 56 L64 64 L70 56" fill="#1e40af" />
               <rect x="52" y="88" width="10" height="42" rx="4" fill="#ffffff" stroke="#94a3b8" strokeWidth="1.5" />
               <rect x="66" y="88" width="10" height="42" rx="4" fill="#ffffff" stroke="#94a3b8" strokeWidth="1.5" />
-              <g className={isReveal && (outcome === "SIX" || outcome === "FOUR") ? "animate-pulse" : ""}>
+              {/* Willow Bat */}
+              <g className={isReveal && (outcome === "SIX" || outcome === "FOUR") ? "origin-bottom-right" : ""}>
                 <rect 
                   x="8" 
                   y="52" 
-                  width="50" 
-                  height="10" 
+                  width="52" 
+                  height="11" 
                   rx="3" 
                   fill="#d97706" 
                   stroke="#78350f" 
                   strokeWidth="1.5" 
-                  transform={isReveal && (outcome === "SIX" || outcome === "FOUR") ? "rotate(-10 8 52)" : "rotate(-32 8 52)"} 
-                  className="drop-shadow-lg"
+                  transform={isReveal && outcome === "SIX" ? "rotate(15 8 52)" : isReveal && outcome === "FOUR" ? "rotate(-8 8 52)" : "rotate(-32 8 52)"} 
+                  className="drop-shadow-lg transition-transform duration-300"
                 />
                 <line x1="45" y1="70" x2="55" y2="76" stroke="#ffffff" strokeWidth="3.5" />
                 <circle cx="48" cy="72" r="5" fill="#f8fafc" stroke="#1e40af" strokeWidth="1.5" />
@@ -210,43 +239,70 @@ export function FullScreenCricketStadium({ phase, timeRemaining, outcome = null,
             </div>
           )}
 
-          {/* Over Outcome Animation (5s reveal) */}
+          {/* BALL TRAJECTORIES AT REVEAL */}
           {isReveal && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0">
               {outcome === "SIX" && (
-                <div className="absolute animate-ball-six flex flex-col items-center">
-                  <div className="text-5xl animate-bounce">🏏💥🚀</div>
-                  <div className="w-12 h-12 rounded-full bg-red-600 border-2 border-white shadow-2xl flex items-center justify-center text-white text-sm font-black">
+                <div className="absolute left-1/2 -translate-x-1/2 top-[55%] animate-ball-six">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-500 to-red-800 border-2 border-white shadow-[0_0_20px_#ef4444] animate-spin flex items-center justify-center text-white text-xs font-black">
                     6
                   </div>
                 </div>
               )}
               {outcome === "FOUR" && (
-                <div className="absolute animate-ball-four flex flex-col items-center">
-                  <div className="text-4xl animate-pulse">⚡🏏💨</div>
-                  <div className="w-10 h-10 rounded-full bg-amber-500 border-2 border-white shadow-xl flex items-center justify-center text-white text-xs font-black">
+                <div className="absolute left-1/2 -translate-x-1/2 top-[55%] animate-ball-four">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 border-2 border-white shadow-[0_0_15px_#f59e0b] animate-spin flex items-center justify-center text-white text-xs font-black">
                     4
                   </div>
-                </div>
-              )}
-              {outcome === "WICKET" && (
-                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 animate-shake flex flex-col items-center">
-                  <div className="text-5xl animate-bounce">🔴🪵💥</div>
-                  <span className="bg-red-600 text-white font-black text-sm px-4 py-1.5 rounded-full uppercase tracking-widest shadow-2xl border-2 border-white">
-                    BOWLED HIM! WICKET!
-                  </span>
                 </div>
               )}
             </div>
           )}
         </div>
+
+        {/* 4. BIG BOLD STADIUM LETTERS (BILLBOARD EFFECT ON REVEAL) */}
+        {isReveal && outcome && (
+          <div className="absolute inset-0 z-45 flex items-center justify-center pointer-events-none p-4">
+            {outcome === "SIX" && (
+              <div className="animate-banner-slam flex flex-col items-center">
+                <div className="text-6xl sm:text-8xl font-black italic tracking-tighter text-emerald-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)] stroke-black border-text">
+                  SIX!
+                </div>
+                <div className="text-xl sm:text-3xl font-black uppercase tracking-widest text-white bg-emerald-600/90 px-6 py-1.5 rounded-2xl border-2 border-white shadow-2xl mt-1">
+                  🏏 MAXIMUM! +6 RUNS
+                </div>
+              </div>
+            )}
+
+            {outcome === "FOUR" && (
+              <div className="animate-banner-slam flex flex-col items-center">
+                <div className="text-6xl sm:text-8xl font-black italic tracking-tighter text-amber-300 drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+                  FOUR!
+                </div>
+                <div className="text-xl sm:text-3xl font-black uppercase tracking-widest text-white bg-amber-500/90 px-6 py-1.5 rounded-2xl border-2 border-white shadow-2xl mt-1">
+                  🏏 BOUNDARY! +4 RUNS
+                </div>
+              </div>
+            )}
+
+            {outcome === "WICKET" && (
+              <div className="animate-banner-slam flex flex-col items-center">
+                <div className="text-5xl sm:text-7xl font-black italic tracking-tighter text-red-500 drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+                  WICKET!
+                </div>
+                <div className="text-lg sm:text-2xl font-black uppercase tracking-widest text-white bg-red-600/90 px-6 py-1.5 rounded-2xl border-2 border-white shadow-2xl mt-1">
+                  🔴 BOWLED HIM! OUT!
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 4. GAME OVERLAY / IN-GAME UI POPUP (Question, Options & Timer rendered directly over the match) */}
+      {/* 5. GAME OVERLAY / IN-GAME UI POPUP (Question & Options pop up in mid-pitch) */}
       <div className="relative z-50 w-full flex-1 flex flex-col justify-between pointer-events-auto p-4 sm:p-6 max-w-lg mx-auto">
         {children}
       </div>
     </div>
   );
 }
-
