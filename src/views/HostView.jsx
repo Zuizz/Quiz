@@ -170,17 +170,8 @@ export function HostView({ gameState, timeline, players }) {
                 </span>
               </div>
 
-              {/* Bowling phase subtle notification so animation is clean & unobstructed */}
-              {timeline.phase === "bowling" && (
-                <div className="mt-auto mb-6 text-center space-y-1 p-4 bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl animate-pop max-w-sm mx-auto">
-                  <span className="text-xs font-black uppercase tracking-widest text-emerald-300 block">
-                    🏃 Fast Bowler Running In...
-                  </span>
-                  <span className="text-xs text-slate-200 block">
-                    Watch the delivery! Question pops up when ball reaches mid-pitch.
-                  </span>
-                </div>
-              )}
+              {/* Bowling phase: completely clear, pure animation */}
+              {timeline.phase === "bowling" && null}
 
               {/* ONLY in Question Phase (30s): Question & Options Pop Up in the Stadium Game */}
               {timeline.phase === "question" && (

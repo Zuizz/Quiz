@@ -356,17 +356,8 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
               </div>
             </div>
 
-            {/* During Bowling Phase (3.5s): ONLY the full stadium animation plays with no popup blocking */}
-            {timeline.phase === "bowling" && (
-              <div className="mt-auto mb-6 text-center space-y-1 p-3 bg-black/60 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl animate-pop max-w-xs mx-auto">
-                <span className="text-[11px] font-black uppercase tracking-widest text-emerald-300 block">
-                  🏃 Fast Bowler Running In...
-                </span>
-                <span className="text-[10px] text-slate-200 block">
-                  Watch the delivery! Question pops up when ball reaches mid-pitch.
-                </span>
-              </div>
-            )}
+            {/* During Bowling Phase (3.5s): Zero text boxes, pure animation */}
+            {timeline.phase === "bowling" && null}
 
             {/* ONLY during Question Phase (30s): The question and answer options pop up! */}
             {timeline.phase === "question" && (
