@@ -7,7 +7,7 @@ import { TimerBar } from "../components/TimerBar";
 import { Leaderboard } from "../components/Leaderboard";
 import { FeedbackOverlay } from "../components/FeedbackOverlay";
 import { evaluateAnswer, MAX_WICKETS } from "../gameLogic";
-import { HumanCricketPitch } from "../components/HumanCricketPitch";
+import { FullScreenCricketStadium } from "../components/FullScreenCricketStadium";
 
 export function StudentView({ gameState, timeline, players, theme, toggleTheme }) {
   // Read or create unique playerId in localStorage
@@ -328,75 +328,93 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
           </div>
         )}
 
-        {/* Live Cricket Pitch & Delivery Area */}
+        {/* Full-Screen Cricket Stadium Match Experience */}
         {gameState.status === "running" && (timeline.phase === "bowling" || timeline.phase === "question" || timeline.phase === "reveal") && currentQ && (
-          <div className="space-y-4">
-            {/* Perspective Pitch with Human Bowler, Batter & Ball */}
-            <HumanCricketPitch
-              phase={timeline.phase}
-              timeRemaining={timeline.timeRemaining}
-              outcome={feedbackOutcome}
-            />
+          <FullScreenCricketStadium
+            phase={timeline.phase}
+            timeRemaining={timeline.timeRemaining}
+            outcome={feedbackOutcome}
+          >
+            {/* Top Match Bar inside the Game Stadium */}
+            <div className="w-full flex items-center justify-between bg-black/60 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/20 text-white shadow-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏏</span>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-emerald-400 block leading-tight">
+                    Ball {currentQIndex + 1} of {QUESTIONS.length}
+                  </span>
+                  <span className="text-sm font-black font-mono">
+                    {currentPlayer.score || 0} Runs
+                  </span>
+                </div>
+              </div>
 
-            {/* During 3.5s Bowling Phase: Clear Delivery Coming Announcement */}
-            {timeline.phase === "bowling" && (
-              <div className="p-4 bg-emerald-600/10 border-2 border-emerald-500 rounded-2xl text-center animate-pulse">
-                <span className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                  Ball {currentQIndex + 1} Incoming
+              {/* Status Indicator */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-[11px] font-black uppercase tracking-wider">
+                <span className={`w-2 h-2 rounded-full ${timeline.phase === "bowling" ? "bg-amber-400 animate-ping" : timeline.phase === "question" ? "bg-red-500 animate-pulse" : "bg-emerald-400"}`} />
+                <span>
+                  {timeline.phase === "bowling" ? "Bowler Delivery" : timeline.phase === "question" ? "Ball Frozen" : "Shot Result"}
                 </span>
-                <h3 className="text-xl font-black text-gray-950 dark:text-white mt-0.5">
-                  Fast Bowler Running In...
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Delivery will freeze in mid-pitch. Get ready to pick your shot!
+              </div>
+            </div>
+
+            {/* During Bowling Phase (3.5s): Big In-Game Announcement overlay */}
+            {timeline.phase === "bowling" && (
+              <div className="my-auto text-center space-y-2 p-6 bg-black/60 backdrop-blur-lg rounded-3xl border-2 border-emerald-400/50 shadow-2xl animate-pop">
+                <div className="text-4xl animate-bounce">🏃‍♂️💨</div>
+                <span className="text-xs font-black uppercase tracking-widest text-emerald-300">
+                  Delivery Incoming
+                </span>
+                <h2 className="text-2xl font-black text-white">
+                  Fast Bowler Running In!
+                </h2>
+                <p className="text-xs text-slate-200">
+                  Ball will freeze right in mid-pitch. Get ready to pick your shot!
                 </p>
               </div>
             )}
 
-            {/* Question appears once ball reaches and freezes in mid-pitch (or during reveal) */}
+            {/* Question & Options Pop Up Directly in the Game when the Ball Freezes */}
             {(timeline.phase === "question" || timeline.phase === "reveal") && (
-              <>
+              <div className="space-y-3.5 my-auto animate-fade-in">
                 <TimerBar
                   timeRemaining={timeline.timeRemaining}
                   totalDuration={timeline.phase === "reveal" ? 5000 : 30000}
                   isReveal={timeline.phase === "reveal"}
                 />
 
-                {/* Question Text */}
-                <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm text-center">
-                  <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">
-                    Ball {currentQIndex + 1} of {QUESTIONS.length}
-                  </span>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                {/* Question Popup Card */}
+                <div className="bg-slate-900/90 backdrop-blur-md border-2 border-emerald-500/40 rounded-3xl p-4 sm:p-5 shadow-2xl text-center">
+                  <h2 className="text-base sm:text-lg font-black text-white leading-snug">
                     {currentQ.question}
                   </h2>
                 </div>
 
-                {/* Answer Options Grid */}
-                <div className="space-y-2.5">
+                {/* 4 Interactive Answer Option Targets */}
+                <div className="space-y-2">
                   {currentQ.options.map((opt) => {
                     const isSelected = selectedKey === opt.key;
                     const showReveal = timeline.phase === "reveal";
                     const isCorrect = opt.key === currentQ.correct;
 
-                    let btnStyle = "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-gray-800 dark:text-gray-200";
-                    let badgeStyle = "bg-gray-100 dark:bg-zinc-800/80 text-gray-800 dark:text-gray-200";
+                    let btnStyle = "bg-slate-900/85 backdrop-blur-md border-white/20 text-white hover:border-emerald-400";
+                    let badgeStyle = "bg-white/10 text-white";
 
                     if (showReveal) {
                       if (isCorrect) {
-                        btnStyle = "bg-emerald-500 text-white border-emerald-600 font-bold shadow-lg shadow-emerald-500/40 animate-pop";
-                        badgeStyle = "bg-emerald-700 text-white";
+                        btnStyle = "bg-emerald-600 text-white border-white font-bold shadow-xl shadow-emerald-500/50 animate-pop scale-[1.02]";
+                        badgeStyle = "bg-emerald-800 text-white";
                       } else if (isSelected && !isCorrect) {
-                        btnStyle = "bg-rose-600 text-white border-rose-700 font-bold shadow-md shadow-rose-500/30 animate-shake";
+                        btnStyle = "bg-rose-600 text-white border-white font-bold shadow-xl shadow-rose-500/50 animate-shake";
                         badgeStyle = "bg-rose-800 text-white";
                       } else {
-                        btnStyle = "bg-gray-100 dark:bg-zinc-900/60 text-gray-400 dark:text-gray-600 opacity-40 border-transparent";
+                        btnStyle = "bg-slate-900/40 text-slate-400 opacity-40 border-transparent";
                       }
                     } else if (isSelected) {
-                      btnStyle = "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-bold shadow-md animate-pulse-glow";
+                      btnStyle = "bg-emerald-500/30 text-emerald-300 border-emerald-400 font-bold shadow-lg animate-pulse-glow";
                       badgeStyle = "bg-emerald-500 text-white";
                     } else if (hasAnsweredCurrentQ) {
-                      btnStyle = "bg-gray-50 dark:bg-zinc-900/40 text-gray-400 dark:text-gray-600 border-gray-200/50 dark:border-zinc-800/50 opacity-50";
+                      btnStyle = "bg-slate-900/40 text-slate-500 border-white/10 opacity-50";
                     }
 
                     const isDisabled = hasAnsweredCurrentQ || isOut || !isEligibleForCurrentQ || showReveal;
@@ -407,11 +425,11 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
                         type="button"
                         disabled={isDisabled}
                         onClick={() => handleSelectOption(opt.key)}
-                        className={`w-full min-h-[58px] p-4 rounded-2xl border-2 flex items-center justify-between gap-3.5 text-left text-base font-semibold transition-all duration-200 ${btnStyle} ${
-                          isDisabled ? "cursor-not-allowed" : "cursor-pointer hover:border-emerald-400 active:scale-98"
+                        className={`w-full min-h-[54px] p-3.5 rounded-2xl border-2 flex items-center justify-between gap-3 text-left text-sm sm:text-base font-semibold transition-all duration-200 ${btnStyle} ${
+                          isDisabled ? "cursor-not-allowed" : "cursor-pointer active:scale-98"
                         }`}
                       >
-                        <div className="flex items-center gap-3.5 flex-1">
+                        <div className="flex items-center gap-3 flex-1">
                           <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 transition-colors ${badgeStyle}`}>
                             {opt.key}
                           </span>
@@ -425,9 +443,9 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
                           <XCircle className="w-5 h-5 text-white flex-shrink-0 animate-shake" />
                         )}
                         {!showReveal && isSelected && (
-                          <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                            <Lock className="w-4 h-4" />
-                            <span>LOCKED</span>
+                          <div className="flex items-center gap-1 text-xs font-bold text-emerald-400">
+                            <Lock className="w-3.5 h-3.5" />
+                            <span>SHOT LOCKED</span>
                           </div>
                         )}
                       </button>
@@ -436,20 +454,21 @@ export function StudentView({ gameState, timeline, players, theme, toggleTheme }
                 </div>
 
                 {hasAnsweredCurrentQ && timeline.phase === "question" && (
-                  <div className="flex items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <Lock className="w-4 h-4" />
-                    <span>Shot locked! Single attempt recorded. Umpire reveals at 30s...</span>
+                  <div className="flex items-center justify-center gap-1.5 p-2 bg-emerald-500/20 backdrop-blur-md border border-emerald-400/40 rounded-xl text-xs font-bold text-emerald-300">
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Shot locked! Awaiting shot execution at 30s...</span>
                   </div>
                 )}
-              </>
+              </div>
             )}
 
+            {/* Leaderboard during 5s reveal */}
             {timeline.phase === "reveal" && (
               <div className="pt-2 animate-fade-in">
                 <Leaderboard players={players} highlightPlayerId={playerId} />
               </div>
             )}
-          </div>
+          </FullScreenCricketStadium>
         )}
 
         {/* Finished / Game Over */}

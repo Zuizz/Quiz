@@ -258,3 +258,4 @@ export function HumanCricketPitch({ phase, timeRemaining, outcome = null }) {
     </div>
   );
 }
+
